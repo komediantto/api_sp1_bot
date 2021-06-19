@@ -1,4 +1,4 @@
-import logging
+import logging                                                                      
 import os
 import time
 from logging.handlers import RotatingFileHandler
@@ -8,6 +8,7 @@ import telegram
 from dotenv import load_dotenv
 from telegram.ext import Filters, Updater
 from telegram.ext.messagehandler import MessageHandler
+from telegram import TelegramError
 
 load_dotenv()
 
@@ -51,24 +52,27 @@ def send_message(message, bot_client):
 
 
 def main():
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
-    updater = Updater(bot=bot, use_context=True)
-    updater.dispatcher.add_handler(MessageHandler(Filters.text, send_message))
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
-    handler = RotatingFileHandler('logs.log')
-    logger.addHandler(handler)  # проинициализировать бота здесь
-    current_timestamp = int(time.time())  # начальное значение timestamp
-
+    try:
+        bot_client = telegram.Bot(token=TELEGRAM_TOKEN)
+    except TelegramError as e:
+        logging.error(f'Бот не запущен: {e}')
+        return
+    logging.debug('Бот запущен')
+    current_timestamp = int(time.time())
     while True:
         try:
             new_homework = get_homework_statuses(current_timestamp)
             if new_homework.get('homeworks'):
-                send_message(parse_homework_status(
-                    new_homework.get('homeworks')[0]))
+                send_message(
+                    parse_homework_status(
+                        new_homework.get('homeworks')[0]
+                    ),
+                    bot_client
+                )
             current_timestamp = new_homework.get(
-                'current_date', current_timestamp)  # обновить timestamp
-            time.sleep(300)  # опрашивать раз в пять минут
+                'current_date', current_timestamp
+            )
+            time.sleep(300)
 
         except Exception as e:
             print(f'Бот столкнулся с ошибкой: {e}')
