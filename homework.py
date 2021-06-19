@@ -43,10 +43,11 @@ def get_homework_statuses(current_timestamp):
     return homework_statuses.json()
 
 
-def send_message(message):
-    log = message.replace('\n', '')
-    logging.info(f"Отправка сообщения в телеграм: {log}")
-    return bot.send_message(chat_id=CHAT_ID, text=message)
+def send_message(message, bot_client):
+    logging.info('Отправка сообщения пользователю. '
+                 f'ID пользователя: {CHAT_ID}.'
+                 f'Сообщение: {message}')
+    return bot_client.send_message(chat_id=CHAT_ID, text=message)
 
 
 def main():
