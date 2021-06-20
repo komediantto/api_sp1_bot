@@ -1,13 +1,11 @@
-import logging                                                                      
+import logging
 import os
 import time
-from logging.handlers import RotatingFileHandler
+from json import JSONDecodeError
 
 import requests
 import telegram
 from dotenv import load_dotenv
-from telegram.ext import Filters, Updater
-from telegram.ext.messagehandler import MessageHandler
 from telegram import TelegramError
 
 load_dotenv()
@@ -21,27 +19,41 @@ PRAKTIKUM_TOKEN = os.getenv("PRAKTIKUM_TOKEN")
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 API = 'https://praktikum.yandex.ru/api/user_api/homework_statuses/'
-bot = telegram.Bot(token=TELEGRAM_TOKEN)
 
 
 def parse_homework_status(homework):
     homework_name = homework.get('homework_name')
+    if homework_name is None:
+        logging.error(f'В ответе сервера нет имени домашки: {homework_name}')
+        return 'В ответе сервера нет имени домашки'
     status = homework.get('status')
-    if status == 'rejected':
-        verdict = 'К сожалению в работе нашлись ошибки.'
-    elif status == 'reviewing':
-        verdict = 'Работа ушла на ревью'
-    else:
-        verdict = (
-            'Ревьюеру всё понравилось, можно приступать к следующему уроку.')
-    return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
+    if status is None:
+        logging.error(f'В ответе сервера нет статуса домашки: {status}')
+        return 'В ответе сервера нет статуса домашки'
+    homework_statuses = {
+        'rejected': 'К сожалению в работе нашлись ошибки',
+        'reviewing': 'Работа ушла на ревью',
+        'approved':
+        'Ревьюеру всё понравилось, можно приступать к следующему уроку'
+    }
+    verdict = homework_statuses[status]
+    try:
+        return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
+    except KeyError:
+        logging.exception('Неизвестный статус')
+        raise
 
 
 def get_homework_statuses(current_timestamp):
     params = {'from_date': current_timestamp}
     headers = {'Authorization': f'OAuth {PRAKTIKUM_TOKEN}'}
-    homework_statuses = requests.get(API, params=params, headers=headers)
-    return homework_statuses.json()
+    try:
+        homework_statuses = requests.get(API, params=params, headers=headers)
+        return homework_statuses.json()
+    except requests.RequestException:
+        logging.error('Ошибка при обращении к API')
+    except JSONDecodeError:
+        logging.info('Ошибка JSON')
 
 
 def send_message(message, bot_client):
