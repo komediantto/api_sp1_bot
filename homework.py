@@ -12,13 +12,15 @@ load_dotenv()
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s, %(levelname)s, %(name)s, %(message)s'
+    filename='logs.log',
+    format='%(asctime)s, %(levelname)s, %(name)s, %(message)s',
+    filemode='a'
 )
 
 PRAKTIKUM_TOKEN = os.getenv("PRAKTIKUM_TOKEN")
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
-API = 'https://prakticum.yandex.ru/api/user_api/homework_statuses/'
+API = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 
 
 def parse_homework_status(homework):
@@ -45,10 +47,10 @@ def parse_homework_status(homework):
 
 
 def get_homework_statuses(current_timestamp):
-    params = {'from_date': current_timestamp}
-    headers = {'Authorization': f'OAuth {PRAKTIKUM_TOKEN}'}
+    headers = {'Authorization': f'OAuth { PRAKTIKUM_TOKEN }'}
+    payload = {'from_date': current_timestamp}
     try:
-        homework_statuses = requests.get(API, params=params, headers=headers)
+        homework_statuses = requests.get(API, headers=headers, params=payload)
         return homework_statuses.json()
     except requests.RequestException:
         logging.error('Ошибка при обращении к API')
