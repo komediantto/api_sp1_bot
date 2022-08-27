@@ -1,5 +1,6 @@
 # Яндекс.Домашка
 ![Python](https://img.shields.io/badge/Python-14354C?style=for-the-badge&logo=python&logoColor=white)
+
 Бот отправляет в личные сообщения Telegram статус проверки домашних заданий, подключаясь к API Яндекс.Практикума.
 Всего три статуса:
 
